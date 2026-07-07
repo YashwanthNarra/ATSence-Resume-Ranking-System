@@ -15,7 +15,7 @@ An AI-powered Resume Intelligence System that analyzes resumes against job descr
 - ⭐ Candidate ranking
 - 📝 AI-generated gap analysis
 - 💡 Personalized resume improvement suggestions
-- ⚡ REST API built with FastAPI
+- ⚡ Built with streamlit
 
 ---
 
@@ -36,8 +36,6 @@ An AI-powered Resume Intelligence System that analyzes resumes against job descr
 - pandas
 
 ### Other Libraries
-- Pydantic
-- Uvicorn
 - Regular Expressions (Regex)
 
 ---
@@ -82,8 +80,8 @@ Resume_Intelligence_System/
 Clone the repository
 
 ```bash
-git clone https://github.com/<YashwanthNarra>/<AI-based resume ranking system>.git
-cd <AI-based resume ranking system>
+git clone https://github.com/YashwanthNarra/AI-based resume ranking system.git
+cd AI-based resume ranking system
 ```
 
 Create a virtual environment
