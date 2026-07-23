@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Resume Intelligence System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --border:    rgba(255,255,255,0.08);
+    --purple:    #7c6df9;
+    --purple-dim: rgba(124,109,249,0.12);
+    --green:     #34d399;
+    --yellow:    #fbbf24;
+    --red:       #f87171;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --radius:    10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+  header { margin-bottom: 36px; }
+  header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
+  header h1 span { color: var(--purple); }
+  header p { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  input[type="password"],
+  input[type="file"],
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="password"]:focus, textarea:focus { border-color: var(--purple); }
+  textarea { resize: vertical; min-height: 130px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: var(--purple); color: #fff; }
+  .btn-primary:not(:disabled):hover { opacity: 0.88; }
+  .btn-full { width: 100%; justify-content: center; margin-top: 16px; }
+
+  .status {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .status.info  { background: var(--purple-dim); color: #a5b4fc; display: block; }
+  .status.error { background: rgba(248,113,113,0.1); color: #fca5a5; display: block; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(124,109,249,0.2);
+  }
+
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .rank-row:hover, .rank-row.active {
+    border-color: var(--purple);
+    background: var(--purple-dim);
+  }
+
+  .rank-num { font-size: 18px; font-weight: 800; min-width: 28px; text-align: center; }
+  .rank-num.gold   { color: #fbbf24; }
+  .rank-num.silver { color: #94a3b8; }
+  .rank-num.bronze { color: #b45309; }
+  .rank-num.other  { color: var(--purple); }
+
+  .rank-name { flex: 1; font-weight: 500; }
+  .rank-file { font-size: 11px; color: var(--muted); }
+
+  .score-badge { font-weight: 700; font-size: 15px; padding: 3px 12px; border-radius: 99px; }
+  .score-high  { background: rgba(52,211,153,0.12); color: var(--green); }
+  .score-mid   { background: rgba(251,191,36,0.12);  color: var(--yellow); }
+  .score-low   { background: rgba(248,113,113,0.12); color: var(--red); }
+
+  #detail { display: none; }
+
+  .score-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .score-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .score-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .score-box .lbl {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+  }
+  .score-box .val { font-size: 24px; font-weight: 800; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    font-size: 11px; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid rgba(124,109,249,0.3);
+    color: #a5b4fc; background: rgba(124,109,249,0.08);
+  }
+  .chip.miss { border-color: rgba(248,113,113,0.3); color: #fca5a5; background: rgba(248,113,113,0.08); }
+  .chip.good { border-color: rgba(52,211,153,0.3);  color: #6ee7b7; background: rgba(52,211,153,0.08); }
+
+  .gap-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .gap-two-col { grid-template-columns: 1fr; } }
+
+  .gap-card {
+    border-left: 3px solid var(--purple);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    background: rgba(124,109,249,0.05);
+    margin-bottom: 8px;
+  }
+  .gap-card .g-section { font-weight: 600; font-size: 13px; }
+  .gap-card .g-issue   { font-size: 12px; color: var(--muted); margin: 2px 0; }
+  .gap-card .g-suggest { font-size: 12px; color: #c7d2fe; }
+
+  .verdict {
+    padding: 10px 16px; border-radius: 8px;
+    font-weight: 500; font-size: 13px; margin-bottom: 16px;
+  }
+  .verdict.strong   { background: rgba(52,211,153,0.1);  color: var(--green);  border: 1px solid rgba(52,211,153,0.2); }
+  .verdict.moderate { background: rgba(251,191,36,0.1);  color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+  .verdict.weak     { background: rgba(248,113,113,0.1); color: var(--red);    border: 1px solid rgba(248,113,113,0.2); }
+
+  .quick-wins { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .qw-item {
+    display: flex; gap: 10px; padding: 7px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .qw-item:last-child { border-bottom: none; }
+  .qw-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--purple); flex-shrink: 0; margin-top: 6px;
+  }
+
+  .entry { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .entry:last-child { border-bottom: none; }
+  .entry-title { font-weight: 600; font-size: 14px; }
+  .entry-meta  { font-size: 11px; color: var(--muted); margin: 2px 0 6px; }
+  .entry-desc  { font-size: 13px; color: #94a3b8; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>📄 Resume <span>Intelligence</span> System</h1>
+    <p>Upload resumes · paste a job description · get ranked scores and gap analysis</p>
+  </header>
+
+  <div class="card">
+    <div class="form-grid">
+
+      <div>
+        <label>Gemini API Key</label>
+        <input type="password" id="apiKey" placeholder="AIza…" />
+      </div>
+
+      <div>
+        <label>Resume PDFs (select multiple)</label>
+        <input type="file" id="resumeFiles" accept=".pdf" multiple />
+      </div>
+
+      <div style="grid-column: 1 / -1">
+        <label>Job Description</label>
+        <textarea id="jdText" placeholder="Paste the full job description here…"></textarea>
+      </div>
+
+    </div>
+    <button class="btn btn-primary btn-full" id="analyseBtn" onclick="runAnalysis()">
+      Analyse Resumes
+    </button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div id="rankings" style="display:none">
+    <div class="card">
+      <div class="section-label">Rankings — sorted by ATS score</div>
+      <div id="role-summary" style="font-size:13px;color:var(--muted);margin-bottom:14px"></div>
+      <div id="rank-list"></div>
+    </div>
+  </div>
+
+  <div id="detail" class="card">
+    <div id="detail-content"></div>
+  </div>
+
+</div>
+
+<script>
+  let activeRank = null;
+
+  function showStatus(msg, type = "info") {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = `status ${type}`;
+  }
+  function hideStatus() {
+    document.getElementById("status").className = "status";
+  }
+
+  function scoreClass(s) {
+    if (s >= 70) return "score-high";
+    if (s >= 45) return "score-mid";
+    return "score-low";
+  }
+  function scoreColor(s) {
+    if (s >= 70) return "var(--green)";
+    if (s >= 45) return "var(--yellow)";
+    return "var(--red)";
+  }
+  function rankBadgeClass(rank) {
+    return ["gold", "silver", "bronze"][rank - 1] || "other";
+  }
+  function verdictClass(text) {
+    const t = (text || "").toLowerCase();
+    if (t.includes("strong")) return "strong";
+    if (t.includes("weak"))   return "weak";
+    return "moderate";
+  }
+
+  async function runAnalysis() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const jdText = document.getElementById("jdText").value.trim();
+    const files  = document.getElementById("resumeFiles").files;
+
+    if (!apiKey)       { showStatus("Enter your Gemini API key.", "error"); return; }
+    if (!files.length) { showStatus("Select at least one PDF resume.", "error"); return; }
+    if (!jdText)       { showStatus("Paste a job description.", "error"); return; }
+
+    const btn = document.getElementById("analyseBtn");
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysing…';
+    showStatus("Sending resumes to Gemini… this may take a minute.");
+
+    const form = new FormData();
+    form.append("api_key", apiKey);
+    form.append("jd_text", jdText);
+    for (const file of files) {
+      form.append("resumes", file);
+    }
+
+    try {
+      const res  = await fetch("/analyse", { method: "POST", body: form });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showStatus(data.detail || "Something went wrong.", "error");
+        return;
+      }
+
+      renderRankings(data);
+      hideStatus();
+    } catch (err) {
+      showStatus("Network error: " + err.message, "error");
+    } finally {
+      btn.disabled  = false;
+      btn.innerHTML = "Analyse Resumes";
+    }
+  }
+
+  function renderRankings(data) {
+    document.getElementById("role-summary").textContent =
+      data.role_summary ? `Role: ${data.role_summary}` : "";
+
+    const list = document.getElementById("rank-list");
+    list.innerHTML = "";
+
+    for (const r of data.rankings) {
+      const row    = document.createElement("div");
+      row.className = "rank-row";
+      row.id        = `row-${r.rank}`;
+      row.onclick   = () => loadDetail(r.rank);
+      row.innerHTML = `
+        <span class="rank-num ${rankBadgeClass(r.rank)}">#${r.rank}</span>
+        <span class="rank-name">
+          ${r.name}
+          <span class="rank-file">${r.filename}</span>
+        </span>
+        <span class="score-badge ${scoreClass(r.ats_score)}">${r.ats_score}%</span>
+      `;
+      list.appendChild(row);
+    }
+
+    document.getElementById("rankings").style.display = "block";
+    document.getElementById("detail").style.display   = "none";
+  }
+
+  async function loadDetail(rank) {
+    if (activeRank) {
+      const prev = document.getElementById(`row-${activeRank}`);
+      if (prev) prev.classList.remove("active");
+    }
+    activeRank = rank;
+    const cur = document.getElementById(`row-${rank}`);
+    if (cur) cur.classList.add("active");
+
+    showStatus("Loading candidate details…");
+
+    try {
+      const res = await fetch(`/resume/${rank}`);
+      const r   = await res.json();
+
+      if (!res.ok) {
+        showStatus(r.detail || "Could not load details.", "error");
+        return;
+      }
+
+      hideStatus();
+      renderDetail(r);
+    } catch (err) {
+      showStatus("Network error: " + err.message, "error");
+    }
+  }
+
+  function renderDetail(r) {
+    const gap = r.gap_analysis || {};
+    let html  = "";
+
+    html += `
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:2px">
+        ${r.name || r.filename}
+        <span style="font-size:12px;color:var(--muted);font-weight:400;margin-left:8px">${r.filename}</span>
+      </h2>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:20px">Rank #${r.rank}</p>
+    `;
+
+    html += `<div class="section-label">Score Breakdown</div>`;
+    html += `<div class="score-grid">`;
+    const scores = [
+      ["ATS Score",  r.ats_score],
+      ["Skills",     r.skill_score],
+      ["Projects",   r.project_score],
+      ["Experience", r.experience_score],
+      ["Education",  r.education_score],
+    ];
+    for (const [lbl, val] of scores) {
+      html += `
+        <div class="score-box">
+          <div class="lbl">${lbl}</div>
+          <div class="val" style="color:${scoreColor(val)}">${val}%</div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+
+    html += `<div class="section-label">Gap Analysis</div>`;
+
+    const verdict = gap.overall_verdict || "";
+    if (verdict) {
+      html += `<div class="verdict ${verdictClass(verdict)}">${verdict}</div>`;
+    }
+
+    html += `<div class="gap-two-col">`;
+
+    html += `<div>`;
+    const strengths = gap.strengths || [];
+    if (strengths.length) {
+      html += `<p style="font-weight:600;font-size:13px;margin-bottom:6px">Strengths</p>`;
+      html += `<div class="chip-row">`;
+      for (const s of strengths) html += `<span class="chip good">${s}</span>`;
+      html += `</div>`;
+    }
+    const missing = gap.missing_skills || [];
+    if (missing.length) {
+      html += `<p style="font-weight:600;font-size:13px;margin:14px 0 6px">Missing Skills</p>`;
+      html += `<div class="chip-row">`;
+      for (const s of missing) html += `<span class="chip miss">${s}</span>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+
+    const weak = gap.weak_sections || [];
+    html += `<div>`;
+    if (weak.length) {
+      html += `<p style="font-weight:600;font-size:13px;margin-bottom:6px">Weak Sections</p>`;
+      for (const w of weak) {
+        html += `
+          <div class="gap-card">
+            <div class="g-section">${w.section}</div>
+            <div class="g-issue">${w.issue}</div>
+            <div class="g-suggest">→ ${w.suggestion}</div>
+          </div>
+        `;
+      }
+    }
+    html += `</div>`;
+    html += `</div>`;
+
+    const qw = gap.quick_wins || [];
+    if (qw.length) {
+      html += `<p style="font-weight:600;font-size:13px;margin:16px 0 8px">Quick Wins — things to fix today</p>`;
+      html += `<div class="quick-wins">`;
+      for (const w of qw) {
+        html += `<div class="qw-item"><div class="qw-dot"></div>${w}</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<hr class="divider">`;
+
+    const matched = r.matched_skills || [];
+    if (matched.length) {
+      html += `<div class="section-label">Matched Skills</div>`;
+      html += `<div class="chip-row">`;
+      for (const m of matched) {
+        html += `<span class="chip" title="Resume: ${m.resume_skill} · ${m.similarity}">${m.jd_skill}</span>`;
+      }
+      html += `</div><hr class="divider">`;
+    }
+
+    const projects = r.ranked_projects || [];
+    if (projects.length) {
+      html += `<div class="section-label">Projects — ranked by relevance</div>`;
+      for (const p of projects) {
+        const tech = (p.technologies || []).join(", ");
+        html += `
+          <div class="entry">
+            <div class="entry-title">#${p.rank} ${p.title || "Untitled"}</div>
+            <div class="entry-meta">Relevance: ${Math.round(p.similarity * 100)}%${tech ? " · " + tech : ""}</div>
+            <div class="entry-desc">${p.description || ""}</div>
+          </div>
+        `;
+      }
+      html += `<hr class="divider">`;
+    }
+
+    const expList = r.experience || [];
+    if (expList.length) {
+      html += `
+        <div class="section-label">
+          Experience
+          <span style="font-size:11px;font-weight:400;text-transform:none;color:var(--muted)">
+            — ${r.total_experience_years} yrs total
+          </span>
+        </div>
+      `;
+      for (const e of expList) {
+        html += `
+          <div class="entry">
+            <div class="entry-title">${e.role}</div>
+            <div class="entry-meta">${e.company} · ${e.duration_text} (${e.duration_years} yrs)</div>
+            <div class="entry-desc">${e.description}</div>
+          </div>
+        `;
+      }
+      html += `<hr class="divider">`;
+    }
+
+    const edu = r.education || {};
+    if (edu.degree || edu.institution) {
+      html += `<div class="section-label">Education</div>`;
+      html += `
+        <div style="font-size:14px">
+          <strong>${edu.degree || ""} ${edu.branch ? "in " + edu.branch : ""}</strong><br>
+          <span style="color:var(--muted)">${edu.institution || ""}${edu.year ? " · " + edu.year : ""}</span>
+        </div>
+      `;
+    }
+
+    document.getElementById("detail-content").innerHTML = html;
+    document.getElementById("detail").style.display     = "block";
+    document.getElementById("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+</script>
+</body>
+</html>
