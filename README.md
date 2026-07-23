@@ -1,178 +1,91 @@
-# AI-Based Resume Intelligence System
+# Resume Intelligence System
 
-An AI-powered Resume Intelligence System that analyzes resumes against job descriptions and provides ATS-style scoring, candidate ranking, semantic skill matching, and personalized improvement suggestions. Unlike traditional keyword-based ATS systems, this project leverages Large Language Models (LLMs) and NLP techniques to understand the semantic meaning of resumes and job descriptions, enabling more accurate candidate evaluation.
-
----
-
-## Features
-
-- 📄 Resume parsing from PDF using Gemini Vision
-- 🧠 AI-based extraction of structured resume information
-- 💼 Job Description (JD) requirement extraction
-- 🔍 Semantic skill matching using Sentence Transformers
-- 📊 Weighted ATS score calculation
-- 📈 Detailed score breakdown
-- ⭐ Candidate ranking
-- 📝 AI-generated gap analysis
-- 💡 Personalized resume improvement suggestions
-- ⚡ Built with fastAPI
-
----
-
-## Tech Stack
-
-### Backend
-- Python
-- FastAPI
-
-### AI & NLP
-- Google Gemini 2.0 Flash
-- Sentence Transformers
-- spaCy
-
-### Machine Learning
-- scikit-learn
-- NumPy
-- pandas
-
-### Other Libraries
-- Regular Expressions (Regex)
-
----
-
-## System Architecture
-
-Resume PDF
-↓
-Gemini Vision
-↓
-Structured Resume JSON
-↓
-Job Description Parsing
-↓
-Semantic Skill Matching
-↓
-ATS Score Calculation
-↓
-Gap Analysis
-↓
-Candidate Ranking & Suggestions
+Upload resumes + a job description → get ATS scores, rankings, and gap analysis.
 
 ---
 
 ## Project Structure
 
 ```
-Resume_Intelligence_System/
-│
-├── app.py
-├── extractor.py
-├── scorer.py
-├── requirements.txt
-├── README.md
-└── ...
+resume_system/
+├── main.py           ← FastAPI backend (all API endpoints)
+├── extractor.py      ← Gemini API calls (parse resume, parse JD, gap analysis)
+├── scorer.py         ← Scoring logic (skill match, project rank, ATS score)
+├── index.html        ← Frontend (open in browser, no extra setup needed)
+└── requirements.txt
 ```
 
 ---
 
-## Installation
+## How to Run
 
-Clone the repository
-
-```bash
-git clone https://github.com/YashwanthNarra/AI-based resume ranking system.git
-cd AI-based resume ranking system
-```
-
-Create a virtual environment
-
-```bash
-python -m venv .venv
-```
-
-Activate the environment
-
-Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-Linux/Mac
-
-```bash
-source .venv/bin/activate
-```
-
-Install dependencies
-
+**Step 1 — Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## Environment Variables
-
-Create a `.env` file
-
-```text
-GEMINI_API_KEY=your_api_key
-```
-
----
-
-## Running the Project
-
+**Step 2 — Start the backend**
 ```bash
-uvicorn app:app --reload
+uvicorn main:app --reload
 ```
 
-Open
+**Step 3 — Open the frontend**
 
-```
-http://127.0.0.1:8000/docs
-```
-
-to access the FastAPI Swagger UI.
+Just open `index.html` in your browser (double-click it or drag it into Chrome).
 
 ---
 
-## Workflow
+## API Endpoints
 
-1. Upload Resume PDF.
-2. Provide Job Description.
-3. Gemini extracts structured resume information.
-4. JD is converted into structured requirements.
-5. Skills are matched using semantic similarity.
-6. ATS score is calculated using weighted scoring.
-7. Gap analysis identifies missing skills.
-8. Personalized suggestions are generated.
-9. Candidates are ranked based on overall compatibility.
+| Method | Endpoint          | What it does                                      |
+|--------|-------------------|---------------------------------------------------|
+| GET    | `/health`         | Check if the server is running                    |
+| POST   | `/analyse`        | Upload resumes + JD → returns ranked list         |
+| GET    | `/rankings`       | Get the rankings from the last /analyse call      |
+| GET    | `/resume/{id}`    | Full details for one resume (use id from rankings)|
 
----
+### POST /analyse — Form fields
 
-## Future Improvements
+| Field     | Type         | Description                         |
+|-----------|--------------|-------------------------------------|
+| `resumes` | PDF files    | One or more resume PDFs             |
+| `jd_text` | string       | The job description as plain text   |
+| `api_key` | string       | Your Gemini API key                 |
 
-- Multi-resume ranking
-- Experience relevance scoring
-- Education matching
-- Project relevance analysis
-- Resume keyword highlighting
-- Better PDF layout handling
-- Database integration
-- Authentication and user management
-- Docker deployment
-- Cloud deployment
+### GET /resume/{id}
+
+Use the `id` field from the `/analyse` or `/rankings` response.
+
+Example: `/resume/0` → details for the #1 ranked candidate.
 
 ---
 
-## Key Highlights
+## Scoring Weights
 
-- AI-powered resume parsing using Gemini Vision
-- Semantic matching instead of simple keyword matching
-- Production-ready REST API using FastAPI
-- Structured ATS scoring methodology
-- Personalized AI feedback for resume improvement
+| Component  | Weight |
+|------------|--------|
+| Skills     | 50%    |
+| Projects   | 25%    |
+| Experience | 15%    |
+| Education  | 10%    |
 
 ---
+
+## How It Works
+
+1. PDF is sent directly to **Gemini Vision** — handles any layout including multi-column
+2. JD is parsed by Gemini to extract required skills, experience, education
+3. Skills are matched using **sentence embeddings** (cosine similarity, not exact keywords)
+4. Projects are **ranked by relevance** to the JD
+5. All components are combined into a **weighted ATS score**
+6. Gemini generates a **gap analysis** with actionable suggestions
+
+---
+
+## Tech Stack
+
+- FastAPI + Uvicorn (backend)
+- Google Gemini 2.0 Flash (resume parsing, JD parsing, gap analysis)
+- intfloat/e5-small-v2 via sentence-transformers (semantic skill matching)
+- scikit-learn cosine similarity
+- Vanilla HTML/CSS/JS (frontend — no framework needed)
