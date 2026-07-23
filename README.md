@@ -15,7 +15,7 @@ An AI-powered Resume Intelligence System that analyzes resumes against job descr
 - ⭐ Candidate ranking
 - 📝 AI-generated gap analysis
 - 💡 Personalized resume improvement suggestions
-- ⚡ Built with streamlit
+- ⚡ Built with fastAPI
 
 ---
 
@@ -23,7 +23,7 @@ An AI-powered Resume Intelligence System that analyzes resumes against job descr
 
 ### Backend
 - Python
-- Streamlit
+- FastAPI
 
 ### AI & NLP
 - Google Gemini 2.0 Flash
