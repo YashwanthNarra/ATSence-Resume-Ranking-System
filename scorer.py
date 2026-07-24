@@ -2,7 +2,7 @@
 scorer.py
 All scoring logic:
   - match_skills()      → finds which resume skills match JD skills
-  - score_projects()    → ranks projects by similarity to the JD
+  - score_projects()    → ranks projects by skill overlap + semantic similarity to JD signal
   - score_experience()  → compares years of experience
   - score_education()   → compares candidate degree vs JD requirement
   - final_ats_score()   → weighted combination of all scores
@@ -44,9 +44,22 @@ def match_skills(resume_skills: list, jd_skills: list, threshold=0.82) -> list:
     return matches
 
 
-def score_projects(projects: list, jd_text: str) -> list:
-    if not projects or not jd_text.strip():
+def score_projects(projects: list, jd_data: dict) -> list:
+    """
+    Rank projects using two blended signals:
+      - Primary (70%): skill overlap between project technologies and JD required+preferred skills
+      - Secondary (30%): semantic similarity against role summary + skills string only
+                         (not full JD text, to avoid noise from benefits/culture/boilerplate)
+    """
+    if not projects:
         return []
+
+    required      = jd_data.get("required_skills", [])
+    preferred     = jd_data.get("preferred_skills", [])
+    all_jd_skills = list(dict.fromkeys(required + preferred))
+
+    role_summary   = jd_data.get("role_summary", "")
+    jd_signal_text = role_summary + " " + " ".join(all_jd_skills)
 
     def project_to_text(p):
         parts = [p.get("title", ""), p.get("description", "")]
@@ -55,14 +68,35 @@ def score_projects(projects: list, jd_text: str) -> list:
             parts.append(" ".join(techs))
         return " ".join(x for x in parts if x)
 
-    project_texts = [project_to_text(p) for p in projects]
-    project_emb   = embed_model.encode(project_texts, normalize_embeddings=True)
-    jd_emb        = embed_model.encode([jd_text],     normalize_embeddings=True)
-    scores        = cosine_similarity(project_emb, jd_emb).flatten()
-
     ranked = []
-    for i, p in enumerate(projects):
-        ranked.append({**p, "similarity": round(float(scores[i]), 3)})
+    for p in projects:
+        techs = p.get("technologies", [])
+
+        # Primary signal: skill overlap between project techs and JD skills
+        if techs and all_jd_skills:
+            matches   = match_skills(techs, all_jd_skills, threshold=0.80)
+            skill_sim = len(matches) / len(all_jd_skills)
+        else:
+            skill_sim = 0.0
+
+        # Secondary signal: semantic similarity vs role summary + skills string
+        proj_text = project_to_text(p)
+        if proj_text.strip() and jd_signal_text.strip():
+            embs    = embed_model.encode(
+                [proj_text, jd_signal_text], normalize_embeddings=True
+            )
+            sem_sim = float(cosine_similarity([embs[0]], [embs[1]])[0][0])
+        else:
+            sem_sim = 0.0
+
+        blended = round(0.70 * skill_sim + 0.30 * sem_sim, 3)
+
+        ranked.append({
+            **p,
+            "skill_similarity":    round(skill_sim, 3),
+            "semantic_similarity": round(sem_sim, 3),
+            "similarity":          blended,  # keep same key so frontend works unchanged
+        })
 
     ranked.sort(key=lambda x: x["similarity"], reverse=True)
     for i, p in enumerate(ranked):
@@ -104,7 +138,8 @@ def analyse_resume(resume_data: dict, jd_data: dict, jd_text: str, gap: dict) ->
     matched_skills = match_skills(resume_skills, all_jd_skills)
     skill_score    = round(len(matched_skills) / len(all_jd_skills) * 100, 2) if all_jd_skills else 0.0
 
-    ranked_projects = score_projects(resume_data.get("projects", []), jd_text)
+    # Pass jd_data (not jd_text) so score_projects uses focused signal
+    ranked_projects = score_projects(resume_data.get("projects", []), jd_data)
     project_score   = 0.0
     if ranked_projects:
         top3          = ranked_projects[:3]
